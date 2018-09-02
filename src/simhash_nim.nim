@@ -20,7 +20,7 @@ type
         f:int
         reg:Regex
         value:int64
-        hashfunc:proc (s: string): array[0..15, uint8]
+        hashfunc:proc (s: string): int
 
 iterator slide(content:string, width=4) : string =
     let maxLen = max(content.len - width + 1, 1)
@@ -34,6 +34,9 @@ iterator tokenize(reg:Regex, content:string) : string =
     for x in slide(tokens):
         yield x
 
+proc defaultHashFunc(a:string) :int =
+    result = parseHexInt($a.toMD5)
+
 proc tokenize(self:Simhash,content:string) : seq[string] {.noInit.} =
     result = lc[y | (y <- tokenize(self.reg,content)),string ]
 
@@ -44,7 +47,7 @@ iterator iterMasks(f:int):tuple[key:int,val:int] =
 proc buildByFeatures[T]( self:var Simhash, features:T) =
     var 
         v = newSeq[int](self.f)
-        h:MD5Digest
+        h:int
         w:int
         t:int
     for f in features:
@@ -81,23 +84,23 @@ proc getFeature[T](features:T):seq[tuple[k:string,w:int]] =
     for x in features:
         result.add( (k:x,w:1) )
 
-proc initSimhash*(value:string, f=defaultF, reg = defaultReg, hashfunc = toMD5 ) : Simhash =
+proc initSimhash*(value:string, f=defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
     result.buildByText(value)
 
-proc initSimhash*(features:seq[tuple[k:string,w:int]] , f = defaultF, reg = defaultReg, hashfunc = toMD5 ) : Simhash =
+proc initSimhash*(features:seq[tuple[k:string,w:int]] , f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
     result.build_by_features(features)
 
-proc initSimhash*(features: openArray[tuple[k:string,w:int]], f = defaultF, reg = defaultReg, hashfunc = toMD5 ) : Simhash =
+proc initSimhash*(features: openArray[tuple[k:string,w:int]], f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
     result.build_by_features(features)
 
-proc initSimhash*(features:seq[string], f = defaultF, reg = defaultReg, hashfunc = toMD5 ) : Simhash =
+proc initSimhash*(features:seq[string], f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
     result.build_by_features(getFeature(features))
 
-proc initSimhash*(features:openArray[string], f = defaultF, reg = defaultReg, hashfunc = toMD5 ) : Simhash =
+proc initSimhash*(features:openArray[string], f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
     result.build_by_features(getFeature(features))
 
