@@ -17,10 +17,16 @@ const
 
 type 
     Simhash* = object
-        f:int
-        reg:Regex
-        value:int64
-        hashfunc:proc (s: string): int
+        f*:int
+        reg*:Regex
+        value*:int64
+        hashfunc*:proc (s: string): int
+
+proc `$`*(self:Simhash):string =
+    result = $(self.value)
+
+proc `==`*(a,b:Simhash):bool =
+    result = a.value == b.value
 
 iterator slide(content:string, width=4) : string =
     let maxLen = max(content.len - width + 1, 1)
@@ -54,7 +60,7 @@ proc buildByFeatures[T]( self:var Simhash, features:T) =
         h = self.hashfunc(f[0])
         w = f[1]
         for i,mask in iterMasks(self.f):
-            t = if (parseHexInt($h) and mask) != 0 : w else : -w
+            t = if (h and mask) != 0 : w else : -w
             v[i] += t
     var ans = 0
     for i,mask in iterMasks(self.f):
@@ -77,7 +83,7 @@ proc buildByText(self:var Simhash, content:string) =
 proc numDifferingBits*(a,b:SomeInteger):SomeInteger=
     result = popcount(a xor b)
 
-proc distance(self:Simhash,other:Simhash):int64 =
+proc distance*(self:Simhash,other:Simhash):int64 =
     result = numDifferingBits(self.value,other.value)
 
 proc getFeature[T](features:T):seq[tuple[k:string,w:int]] =
@@ -104,19 +110,6 @@ proc initSimhash*(features:openArray[string], f = defaultF, reg = defaultReg, ha
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
     result.build_by_features(getFeature(features))
 
-when isMainModule:
-    let a = 0xDEADBEEF;
-    let b = 0xDEADBEAD;
-    let expected = 2;
-    assert numDifferingBits(a,b) == expected
-    let sh3 = initSimhash(["aaa", "bbb"])
-    assert sh3.value == 57087923692560392
 
-    let sh4 = initSimhash([ ("aaa",1), ("bbb",1)])
-    assert sh4.value == 57087923692560392
-
-    let sh = initSimhash("How are you? I AM fine. Thanks. And you?")
-    let sh2 = initSimhash("How old are you ? :-) i am fine. Thanks. And you?")
-    assert sh.distance(sh2) > 0
 
     
