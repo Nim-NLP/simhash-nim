@@ -50,7 +50,7 @@ iterator iterMasks(f:int):tuple[key:int,val:int] =
     for res in 0..<f:
         yield (key:res,val:1 shl res)
 
-proc buildByFeatures[T]( self:var Simhash, features:T) =
+proc buildByFeatures*[T]( self:var Simhash, features:T):int =
     var 
         v = newSeq[int](self.f)
         h:int
@@ -65,10 +65,9 @@ proc buildByFeatures[T]( self:var Simhash, features:T) =
     var ans = 0
     for i,mask in iterMasks(self.f):
         if v[i] > 0:
-            ans = (ans or mask)
-    self.value = ans
-    
-proc buildByText(self:var Simhash, content:string) =
+            result = (result or mask)
+
+proc buildByText*(self:var Simhash, content:string):int =
     var 
         features = self.tokenize(content)
         r:seq[tuple[k:string,w:int]] = @[]
@@ -78,8 +77,14 @@ proc buildByText(self:var Simhash, content:string) =
             let c = count(features,x)
             r.add( (k:x,w:c) )
             meet = x
-    self.buildByFeatures(r)
-    
+    result = self.buildByFeatures(r)
+        
+proc fromText*(self:var Simhash, content:string) =
+    self.value = self.buildByText(content)
+
+proc fromFeatures*[T]( self:var Simhash, features:T) =
+    self.value = self.buildByFeatures(features)
+            
 proc numDifferingBits*(a,b:SomeInteger):SomeInteger=
     result = popcount(a xor b)
 
@@ -92,24 +97,20 @@ proc getFeature[T](features:T):seq[tuple[k:string,w:int]] =
 
 proc initSimhash*(value:string, f=defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
-    result.buildByText(value)
+    result.fromText(value)
 
 proc initSimhash*(features:seq[tuple[k:string,w:int]] , f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
-    result.build_by_features(features)
+    result.fromFeatures(features)
 
 proc initSimhash*(features: openArray[tuple[k:string,w:int]], f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
-    result.build_by_features(features)
+    result.fromFeatures(features)
 
 proc initSimhash*(features:seq[string], f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
-    result.build_by_features(getFeature(features))
+    result.fromFeatures(getFeature(features))
 
 proc initSimhash*(features:openArray[string], f = defaultF, reg = defaultReg, hashfunc = defaultHashFunc ) : Simhash =
     result = Simhash(f:f,reg:re(reg),hashfunc:hashfunc)
-    result.build_by_features(getFeature(features))
-
-
-
-    
+    result.fromFeatures(getFeature(features))
