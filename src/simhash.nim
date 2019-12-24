@@ -5,11 +5,8 @@
 import bitops
 import nre
 import md5
-import sugar
-import strutils
-import sequtils
-import parseutils
-import math
+import strutils,sequtils
+import lc
 
 const 
     defaultReg = r"[\w]+"
